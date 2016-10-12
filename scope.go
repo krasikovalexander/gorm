@@ -10,8 +10,35 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jinzhu/inflection"
 	"reflect"
 )
+
+func (scope *Scope) autoCreateForeignKeys() *Scope {
+	tableName := scope.TableName()
+	//quotedTableName := scope.QuotedTableName()
+	if !scope.Dialect().HasTable(tableName) {
+		return scope
+	} else {
+		for _, field := range scope.GetStructFields() {
+			if fk, ok := field.TagSettings["FOREIGNKEY"]; ok {
+				params := strings.Split(fk, ",")
+				onUpdate := "CASCADE"
+				onDelete := "CASCADE"
+
+				if len(params) > 1 {
+					onUpdate = params[1]
+				}
+
+				if len(params) > 2 {
+					onDelete = params[2]
+				}
+				scope.addForeignKey(ToDBName(params[0]), fmt.Sprintf("%s(id)", inflection.Plural(ToDBName(field.Struct.Type.Name()))), onUpdate, onDelete)
+			}
+		}
+	}
+	return scope
+}
 
 // Scope contain current operation's information when you perform any operation on the database
 type Scope struct {

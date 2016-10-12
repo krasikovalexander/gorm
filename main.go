@@ -536,6 +536,9 @@ func (s *DB) AutoMigrate(values ...interface{}) *DB {
 	for _, value := range values {
 		db = db.NewScope(value).autoMigrate().db
 	}
+	for _, value := range values {
+		db = db.NewScope(value).autoCreateForeignKeys().db
+	}
 	return db
 }
 
